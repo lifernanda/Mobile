@@ -1,39 +1,106 @@
-import {View, Text, Image, StyleSheet, Pressable} from 'react-native';
+import { ActionButton } from '@/components/ActionButton';
+import { FokusButton } from '@/components/Fokus.Button';
+import { Timer } from '@/components/Timer';
+import { useRef, useState } from 'react';
+import {View, Text, Image, StyleSheet, Pressable, ImageSourcePropType} from 'react-native';
+
+interface PomodoroTimer{
+    id: string;
+    initialValue: number;
+    imagem: ImageSourcePropType;
+    display: string;
+}
+
+const pomodoro = [
+    {
+        id: 'foco', 
+        initialValue: 25*60,
+        imagem: require('@/assets/foco.png'),
+        display: 'Foco',
+    },
+    {
+        id: 'curto', 
+        initialValue: 5*60,
+        imagem: require('@/assets/curto.png'),
+        display: 'Pausa Curta',
+    },
+    {
+        id: 'longo', 
+        initialValue: 15*60,
+        imagem: require('@/assets/longo.png'),
+        display: 'Pausa Longa'
+    },
+]
 
 export default function Index(){
+
+    const [typeTimer, setTypeTimer] = useState <PomodoroTimer>(pomodoro[0])
+    const [timerRunning, setTimerRunning] = useState(false)
+    const timerRef = useRef<ReturnType<typeof setInterval> | null> (null);
+    const [seconds, setSeconds] = useState(pomodoro[0].initialValue)
+
+    const clear = () =>{
+        if (timerRef.current != null){
+            clearInterval(timerRef.current)
+            timerRef.current = null
+            setTimerRunning(false)
+        }
+    }
+
+    const toogleTypeTimer = (newTipeTimer: PomodoroTimer) => {
+        setTypeTimer(newTipeTimer)
+        setSeconds(newTipeTimer.initialValue)
+        clear()
+   
+    }
+
+            const toogleTimer = () =>{
+                if (timerRef.current){
+                    //pausar
+                    clearInterval(timerRef.current)
+                    timerRef.current = null
+                    setTimerRunning(false)
+                    return
+                }
+                setTimerRunning(true)
+                const id = setInterval(() =>{
+                    setSeconds(oldState =>{
+                        if (oldState === 0){
+                            clear();
+                            return typeTimer.initialValue
+                        }
+                        return oldState - 1
+                    })
+                }, 1000)
+                timerRef.current = id
+            }
+
     return(
         <View style={styles.container}>
-            <Image source={require('@/assets/foco.png')}/>
+            <Image source={typeTimer.imagem}/>
             <View style={styles.action}>
                 <View style={styles.context}>
-                    <Pressable style={styles.contextButtonActive}>
-                        <Text style={styles.contextButtonText}>
-                            Foco
-                        </Text>
-                    </Pressable>
-
-                    <Pressable>
-                        <Text style={styles.contextButtonText}>
-                            Pausa Curta
-                        </Text>
-                    </Pressable>
-
-                    <Pressable>
-                        <Text style={styles.contextButtonText}>
-                            Pausa Longa
-                        </Text>
-                    </Pressable>
+                    {pomodoro.map(p =>(
+                        <ActionButton
+                            key={p.id}
+                            active={typeTimer.id === p.id}
+                            onPress={() => toogleTypeTimer(p)}
+                            display={p.display}
+                        />
+                    )
+                )}
                 </View>
-                <Text style={styles.timer}>
-                    25:00
-                </Text>
-                <Pressable style={styles.button}>
-                    <Text style={styles.buttonText}>Começar</Text>
-                </Pressable>
+                <Timer
+                totalSeconds={seconds}
+                />
+                <FokusButton
+                    title = {timerRunning ? 'Pausar' : 'Começar'}
+                    onPress={toogleTimer}
+                />
             </View>
             <View style={styles.footer}>
                 <Text style={styles.footerText}>
-                     projeto Fictício Desenvovido para fins de aprendizagem.
+                     Projeto Fictício Desenvovido para fins de aprendizagem.
                      </Text>
                 <Text style={styles.footerText}>
                     Desenvolvido pelos alunos do curso de Dev- Sesi/Senai Pederneiras
@@ -64,32 +131,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
        
-    },
-    contextButtonActive:{
-        backgroundColor: "#144480",
-        borderRadius: 8,
-
-    },
-    contextButtonText:{
-        color: "#fff",
-        fontSize: 12.5,
-        padding: 8
-    },
-    timer:{
-        color: "#fff",
-        fontSize: 54,
-        fontWeight: "bold",
-        textAlign: "center"
-    },
-    button:{
-        backgroundColor: "#b872ff",
-        borderRadius: 32,
-        padding: 8
-    },
-    buttonText:{
-        textAlign: "center",
-        color:"#021123",
-        fontSize: 18
     },
     footer:{
         width: "80%",
